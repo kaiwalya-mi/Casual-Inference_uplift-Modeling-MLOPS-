@@ -25,7 +25,25 @@ This project implements the theoretical frameworks outlined in foundational caus
 2. **Feature Extraction Pipeline (PySpark):** Aggregates streaming windows to compute real-time behavioral features (e.g., scroll velocity decay, idle time).
 3. **Causal Uplift Engine (CausalML):** Evaluates treatment assignment (email trigger vs. control) against conversion outcomes to compute individual CATE scores.
 4. **Action Router:** Filters out "sure things" and "lost causes," targeting exclusively the *persuadable cohort* to maximize Qini performance and net conversion lift.
+flowchart TD
+    subgraph TRAIN["Offline learning"]
+        A["Simulated browsing events"] --> B["Shared PySpark feature recipe"]
+        B --> C["Random email assignment + later purchase"]
+        C --> D["Train / validation / test split"]
+        D --> E["CausalML S-learner + validation cutoff"]
+        E --> F["Saved model + cutoff"]
+        E --> M["Held-out Qini + lift estimates"]
+    end
 
+    subgraph SERVE["Streaming replay"]
+        G["New browsing events"] --> H["Same features: 1-minute windows"]
+        H --> I["Estimate added purchase chance"]
+        I --> J{"Above saved cutoff?"}
+        J -->|Yes| K["WOULD_EMAIL"]
+        J -->|No| L["SKIP"]
+    end
+
+    F --> I
 ---
 
 ## 4. Metrics & Result
